@@ -403,9 +403,15 @@ const proposeTx = await deployedGovernor.propose(
 **注意：**在这种情况下，我们只有一名成员（拥有 100% 的选票）在投票。
 
 ```
+// 投票选项，1 表示赞成
 const voteWay = 1
+
+// 投票理由
 const reason = "I vote yes"
+
+// 使用 castVoteWithReason 函数进行投票
 let voteTx = await deployedGovernor.castVoteWithReason(proposalId, voteWay, reason)
+
 ```
 
 ## 队列和执行
@@ -413,20 +419,43 @@ let voteTx = await deployedGovernor.castVoteWithReason(proposalId, voteWay, reas
 接下来，来自 DAO 的任何成员都可以排队并执行该提案，如果提案通过投票，它将被执行，并且 Box 合约上的存储函数将被调用，值为 77。你可能已经注意到像*moveTime*和*moveBlocks ，*这些来自 Patrick Collins [DAO 模板](https://github.com/PatrickAlphaC/dao-template/tree/main/utils)，在开发环境中可用于模拟时间的流逝和区块挖掘，它们帮助我们模拟投票期的完成、时间锁定延迟等。
 
 ```
-const queueTx = await deployedGovernor.queue([deployedBox.address],[0],[encodedFunctionCall],descriptionHash)
-await queueTx.wait(1)
-await moveTime(MIN_DELAY + 1)
-await moveBlocks(1)
-console.log("Executing...")
-const executeTx = await deployedGovernor.execute(
-[deployedBox.address],
-[0],
-[encodedFunctionCall],
-descriptionHash
+// 使用 queue 函数将提案排入队列
+const queueTx = await deployedGovernor.queue(
+    [deployedBox.address],         // 提案涉及的合约地址
+    [0],                           // 提案中的值（对于存储操作，可以设置为 0）
+    [encodedFunctionCall],         // 编码后的函数调用数据
+    descriptionHash                // 提案描述哈希值
 )
+
+// 等待交易确认
+await queueTx.wait(1)
+
+// 将时间推进 MIN_DELAY + 1 秒
+await moveTime(MIN_DELAY + 1)
+
+// 推进区块数量
+await moveBlocks(1)
+
+// 输出执行信息
+console.log("Executing...")
+
+// 使用 execute 函数执行提案
+const executeTx = await deployedGovernor.execute(
+    [deployedBox.address],         // 提案涉及的合约地址
+    [0],                           // 提案中的值（对于存储操作，可以设置为 0）
+    [encodedFunctionCall],         // 编码后的函数调用数据
+    descriptionHash                // 提案描述哈希值
+)
+
+// 等待交易确认
 await executeTx.wait(1)
-const value=await deployedBox.retrieve();
+
+// 获取执行后的 Box 合约值
+const value = await deployedBox.retrieve()
+
+// 输出执行结果
 console.log(value)
+
 ```
 
 **运行测试**
@@ -442,10 +471,18 @@ console.log(value)
 发行代币的代码如下所示
 
 ```
+// 获取三个签署者地址，owner、addr1、addr2
 [owner, addr1, addr2] = await ethers.getSigners();
-const signer=await ethers.getSigner(addr1.address);
-const deployedTokenUser2=await deployedToken.connect(signer)
-await deployedTokenUser2.issueToken(addr1.address,200)
+
+// 获取 addr1 地址对应的签名者
+const signer = await ethers.getSigner(addr1.address);
+
+// 使用 signer 连接到 deployedToken 合约
+const deployedTokenUser2 = await deployedToken.connect(signer)
+
+// 在 User2 账户中发行 200 个代币
+await deployedTokenUser2.issueToken(addr1.address, 200)
+
 ```
 
 函数*getSigners()*返回 Hardhat 开发环境中所有帐户的列表，然后我们向该地址发行 200 个令牌。
