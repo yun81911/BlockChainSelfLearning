@@ -92,164 +92,219 @@ DAO 的一些示例是[MakerDAO](https://makerdao.com/en/)和[Aragon](https://ar
 
 ```
 // SPDX-License-Identifier: MIT
+// 上述为 SPDX 许可证标识，表示使用 MIT 许可证
+
 pragma solidity ^0.8.4;
-import “@openzeppelin/contracts/governance/Governor.sol”;
-import “@openzeppelin/contracts/governance/extensions/GovernorSettings.sol”;
-import “@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol”;
-//import “@openzeppelin/contracts/governance/extensions/GovernorVotes.sol”;
-import “@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol”;
-import “@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol”;
+
+import "@openzeppelin/contracts/governance/Governor.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
+//import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
+
+// GovernorContract 合约继承了多个 OpenZeppelin 提供的合约，包括 Governor、GovernorSettings、GovernorCountingSimple、GovernorVotes、GovernorVotesQuorumFraction 和 GovernorTimelockControl
+
 contract GovernorContract is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorVotesQuorumFraction, GovernorTimelockControl {
-constructor(IVotes _token, TimelockController _timelock,uint256 _quorumPercentage,
-uint256 _votingPeriod,
-uint256 _votingDelay)
-Governor(“GovernorContract”)
-GovernorSettings(_votingDelay,_votingPeriod,0)
-GovernorVotes(_token)
-GovernorVotesQuorumFraction(_quorumPercentage)
-GovernorTimelockControl(_timelock)
-{}
-// The following functions are overrides required by Solidity.
-function votingDelay()
-public
-view
-override(IGovernor, GovernorSettings)
-returns (uint256)
-{
-return super.votingDelay();
+
+    constructor(IVotes _token, TimelockController _timelock, uint256 _quorumPercentage, uint256 _votingPeriod, uint256 _votingDelay)
+        Governor("GovernorContract")  // 初始化 Governor 合约的名称
+        GovernorSettings(_votingDelay, _votingPeriod, 0)  // 初始化 GovernorSettings 合约
+        GovernorVotes(_token)  // 初始化 GovernorVotes 合约
+        GovernorVotesQuorumFraction(_quorumPercentage)  // 初始化 GovernorVotesQuorumFraction 合约
+        GovernorTimelockControl(_timelock)  // 初始化 GovernorTimelockControl 合约
+    {}
+
+    // 以下函数是 Solidity 要求的重写函数。
+
+    // 返回投票延迟
+    function votingDelay()
+        public
+        view
+        override(IGovernor, GovernorSettings)
+        returns (uint256)
+    {
+        return super.votingDelay();
+    }
+
+    // 返回投票期间
+    function votingPeriod()
+        public
+        view
+        override(IGovernor, GovernorSettings)
+        returns (uint256)
+    {
+        return super.votingPeriod();
+    }
+
+    // 返回投票法定人数
+    function quorum(uint256 blockNumber)
+        public
+        view
+        override(IGovernor, GovernorVotesQuorumFraction)
+        returns (uint256)
+    {
+        return super.quorum(blockNumber);
+    }
+
+    // 获取指定账户的票数
+    function getVotes(address account, uint256 blockNumber)
+        public
+        view
+        override(Governor, IGovernor)
+        returns (uint256)
+    {
+        return _getVotes(account, blockNumber, _defaultParams());
+    }
+
+    // 返回提案状态
+    function state(uint256 proposalId)
+        public
+        view
+        override(Governor, GovernorTimelockControl)
+        returns (ProposalState)
+    {
+        return super.state(proposalId);
+    }
+
+    // 提出新提案
+    function propose(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description)
+        public
+        override(Governor, IGovernor)
+        returns (uint256)
+    {
+        return super.propose(targets, values, calldatas, description);
+    }
+
+    // 返回提案法定人数
+    function proposalThreshold()
+        public
+        view
+        override(Governor, GovernorSettings)
+        returns (uint256)
+    {
+        return super.proposalThreshold();
+    }
+
+    // 执行提案
+    function _execute(uint256 proposalId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
+        internal
+        override(Governor, GovernorTimelockControl)
+    {
+        super._execute(proposalId, targets, values, calldatas, descriptionHash);
+    }
+
+    // 取消提案
+    function _cancel(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
+        internal
+        override(Governor, GovernorTimelockControl)
+        returns (uint256)
+    {
+        return super._cancel(targets, values, calldatas, descriptionHash);
+    }
+
+    // 返回执行者地址
+    function _executor()
+        internal
+        view
+        override(Governor, GovernorTimelockControl)
+        returns (address)
+    {
+        return super._executor();
+    }
+
+    // 支持的接口检查
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(Governor, GovernorTimelockControl)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
 }
-function votingPeriod()
-public
-view
-override(IGovernor, GovernorSettings)
-returns (uint256)
-{
-return super.votingPeriod();
-}
-function quorum(uint256 blockNumber)
-public
-view
-override(IGovernor, GovernorVotesQuorumFraction)
-returns (uint256)
-{
-return super.quorum(blockNumber);
-}
-function getVotes(address account, uint256 blockNumber)
-public
-view
-override(Governor, IGovernor)
-returns (uint256)
-{
-return _getVotes(account, blockNumber, _defaultParams());
-}
-function state(uint256 proposalId)
-public
-view
-override(Governor, GovernorTimelockControl)
-returns (ProposalState)
-{
-return super.state(proposalId);
-}
-function propose(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description)
-public
-override(Governor, IGovernor)
-returns (uint256)
-{
-return super.propose(targets, values, calldatas, description);
-}
-function proposalThreshold()
-public
-view
-override(Governor, GovernorSettings)
-returns (uint256)
-{
-return super.proposalThreshold();
-}
-function _execute(uint256 proposalId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
-internal
-override(Governor, GovernorTimelockControl)
-{
-super._execute(proposalId, targets, values, calldatas, descriptionHash);
-}
-function _cancel(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
-internal
-override(Governor, GovernorTimelockControl)
-returns (uint256)
-{
-return super._cancel(targets, values, calldatas, descriptionHash);
-}
-function _executor()
-internal
-view
-override(Governor, GovernorTimelockControl)
-returns (address)
-{
-return super._executor();
-}
-function supportsInterface(bytes4 interfaceId)
-public
-view
-override(Governor, GovernorTimelockControl)
-returns (bool)
-{
-return super.supportsInterface(interfaceId);
-}
-}
+
 ```
 
 接下来，让我们添加令牌合约，这在 OpenZeppelin 上也是可用的。我的代码有一个额外的“issueToken”函数（稍后会详细介绍）。
 
 ```
 // SPDX-License-Identifier: MIT
+// 上述为 SPDX 许可证标识，表示使用 MIT 许可证
+
 pragma solidity ^0.8.2;
+
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
+
+// MyToken 合约继承了多个 OpenZeppelin 提供的合约，包括 ERC20、ERC20Permit 和 ERC20Votes
+
 contract MyToken is ERC20, ERC20Permit, ERC20Votes {
-constructor() ERC20("MyToken", "MTK") ERC20Permit("MyToken") {
-_mint(msg.sender, 1000);
+
+    constructor() ERC20("MyToken", "MTK") ERC20Permit("MyToken") {
+        _mint(msg.sender, 1000);
+    }
+
+    // 以下函数是 Solidity 要求的重写函数。
+
+    // 在代币转移后触发的内部函数
+    function _afterTokenTransfer(address from, address to, uint256 amount)
+        internal
+        override(ERC20, ERC20Votes)
+    {
+        super._afterTokenTransfer(from, to, amount);
+    }
+
+    // 铸造新代币的内部函数
+    function _mint(address to, uint256 amount)
+        internal
+        override(ERC20, ERC20Votes)
+    {
+        super._mint(to, amount);
+    }
+
+    // 销毁代币的内部函数
+    function _burn(address account, uint256 amount)
+        internal
+        override(ERC20, ERC20Votes)
+    {
+        super._burn(account, amount);
+    }
+
+    // 发行代币的函数
+    function issueToken(address to, uint256 amount) public {
+        _mint(to, amount);
+    }
 }
-// The functions below are overrides required by Solidity.
-function _afterTokenTransfer(address from, address to, uint256 amount)
-internal
-override(ERC20, ERC20Votes)
-{
-super._afterTokenTransfer(from, to, amount);
-}
-function _mint(address to, uint256 amount)
-internal
-override(ERC20, ERC20Votes)
-{
-super._mint(to, amount);
-}
-function _burn(address account, uint256 amount)
-internal
-override(ERC20, ERC20Votes)
-{
-super._burn(account, amount);
-}
-function issueToken(address to, uint256 amount) public{
-_mint(to, amount);
-}
-}
+
 ```
 
 最后，让我们检查一下 Target 合约，在我们的例子中，我们将使用 Patrick Collins 使用的相同 Box 合约。
 
 ```
 // SPDX-License-Identifier: MIT
+// 上述为 SPDX 许可证标识，表示使用 MIT 许可证
+
 pragma solidity ^0.8.0;
+
 import "@openzeppelin/contracts/governance/TimelockController.sol";
+
+// TimeLock 合约继承了 OpenZeppelin 提供的 TimelockController 合约
+
 contract TimeLock is TimelockController {
-// minDelay is how long you have to wait before executing
-// proposers is the list of addresses that can propose
-// executors is the list of addresses that can execute
-constructor(
-uint256 minDelay,
-address[] memory proposers,
-address[] memory executors
-) TimelockController(minDelay, proposers, executors) {}
+
+    // minDelay 表示执行前必须等待的最短时间
+    // proposers 是可以提出提案的地址列表
+    // executors 是可以执行提案的地址列表
+    constructor(
+        uint256 minDelay,
+        address[] memory proposers,
+        address[] memory executors
+    ) TimelockController(minDelay, proposers, executors) {}
+
 }
+
 ```
 
 ## 测试
@@ -272,20 +327,48 @@ module.exports=
 让我们编写代码将所有合约部署到本地网络（Hardhat 在内部管理它，我们不需要启动任何进程）
 
 ```
+// 获取 MyToken 合约工厂
 governanceToken = await ethers.getContractFactory("MyToken")
-deployedToken=await governanceToken.deploy();
-await deployedToken.deployed();
+
+// 部署 MyToken 合约
+deployedToken = await governanceToken.deploy()
+
+// 等待合约部署完成
+await deployedToken.deployed()
+
+// 委托代理给所有者地址（这里假设 owner 是已定义的地址）
 transactionResponse = await deployedToken.delegate(owner.address)
+
+// 等待交易确认
 await transactionResponse.wait(1)
+
+// 获取 TimeLock 合约工厂
 timeLock = await ethers.getContractFactory("TimeLock")
-deployedTimeLock=await timeLock.deploy(MIN_DELAY,[],[]);
-await deployedTimeLock.deployed();
+
+// 部署 TimeLock 合约，MIN_DELAY、[]、[] 是构造函数参数
+deployedTimeLock = await timeLock.deploy(MIN_DELAY, [], [])
+
+// 等待合约部署完成
+await deployedTimeLock.deployed()
+
+// 获取 GovernorContract 合约工厂
 governor = await ethers.getContractFactory("GovernorContract")
-deployedGovernor=await governor.deploy(deployedToken.address,deployedTimeLock.address,QUORUM_PERCENTAGE,VOTING_PERIOD,VOTING_DELAY);
+
+// 部署 GovernorContract 合约，传入 MyToken 和 TimeLock 合约地址以及其他参数
+deployedGovernor = await governor.deploy(deployedToken.address, deployedTimeLock.address, QUORUM_PERCENTAGE, VOTING_PERIOD, VOTING_DELAY)
+
+// 等待合约部署完成
 await deployedGovernor.deployed()
+
+// 获取 Box 合约工厂
 box = await ethers.getContractFactory("Box")
-deployedBox=await box.deploy()
+
+// 部署 Box 合约
+deployedBox = await box.deploy()
+
+// 等待合约部署完成
 await deployedBox.deployed()
+
 ```
 
 ## 提案创建
@@ -295,9 +378,20 @@ await deployedBox.deployed()
 propose 函数的输出是一个包含**Proposal Id 的交易。**这用于跟踪提案。
 
 ```
-const proposalDescription="propose this data"
+// 提案描述
+const proposalDescription = "propose this data"
+
+// 使用 Box 合约的 ABI 编码存储函数调用数据
 let encodedFunctionCall = box.interface.encodeFunctionData("store", [77])
-const proposeTx = await deployedGovernor.propose([deployedBox.address],[0],[encodedFunctionCall],proposalDescription);
+
+// 向 GovernorContract 提交提案
+const proposeTx = await deployedGovernor.propose(
+    [deployedBox.address],   // 提案涉及的合约地址
+    [0],                     // 提案中的值（对于存储操作，可以设置为 0）
+    [encodedFunctionCall],   // 编码后的函数调用数据
+    proposalDescription      // 提案描述
+);
+
 ```
 
 提案是在值为 77 的 Box 合约上触发*存储功能。*
